@@ -98,6 +98,43 @@ export interface AvaliacaoEmenta {
   descricao?: string;
 }
 
+// Avaliação Realizada (instância de uma avaliação aplicada a uma turma)
+export interface AvaliacaoRealizada {
+  id: string;
+  turmaId: string;
+  titulo: string;
+  tipo: 'prova' | 'trabalho' | 'apresentacao' | 'projeto' | 'participacao';
+  dataRealizacao: string;
+  peso: number; // percentual da nota final
+  descricao?: string;
+  resultados: ResultadoAvaliacao[]; // Notas dos alunos
+  dataCriacao: string;
+  dataAtualizacao?: string;
+}
+
+// Resultado de um aluno em uma avaliação
+export interface ResultadoAvaliacao {
+  alunoId: string;
+  nota?: number; // 0-10 ou null se ainda não foi avaliado
+  observacoes?: string;
+  dataAvaliacao?: string;
+}
+
+// Aula Cancelada
+export interface AulaCancelada {
+  aulaNumero: number;
+  aulaTitulo: string;
+  data: string;
+  motivo: string;
+  justificativa: string;
+  reposicao?: {
+    data: string;
+    horario: string;
+  };
+  canceladoPor: string; // ID do usuário que cancelou
+  canceladoEm: string; // Timestamp do cancelamento
+}
+
 // Turma
 export interface Turma {
   id: string;
@@ -115,6 +152,8 @@ export interface Turma {
   vagasTotal: number;
   vagasOcupadas: number;
   alunos: string[]; // IDs dos alunos
+  avaliacoes?: string[]; // IDs das avaliações realizadas
+  aulasCanceladas?: AulaCancelada[]; // Histórico de aulas canceladas
   observacoes?: string;
   dataCriacao: string;
 }
@@ -146,6 +185,13 @@ export interface Aluno {
     email: string;
     parentesco: string;
   };
+  contatoEmergencia?: {
+    nome: string;
+    telefone: string;
+    parentesco: string;
+  };
+  alergias?: string;
+  deficiencias?: string;
   observacoes?: string;
   foto?: string;
 }
@@ -214,10 +260,12 @@ export interface DiarioAula {
   id: string;
   turmaId: string;
   instrutorId: string;
-  data: string;
-  numeroAula: number;
+  aulaEmentaId: string; // ID da aula na ementa
+  aulaTitulo: string; // Título da aula (cache para facilitar visualização)
+  data: string; // Data em que a aula foi ministrada
+  numeroAula: number; // Número sequencial da aula ministrada
   tipo: TipoAula;
-  conteudo: string;
+  conteudo: string; // Resumo do que foi abordado na aula
   resumo: string;
   observacoes?: string;
   presencas: RegistroPresenca[];

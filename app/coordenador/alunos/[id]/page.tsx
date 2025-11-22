@@ -28,6 +28,7 @@ import {
   AlertCircle,
   UserMinus,
   FileText,
+  AlertTriangle,
 } from 'lucide-react';
 import type { Aluno } from '@/lib/types';
 
@@ -181,7 +182,7 @@ export default function AlunoDetalhesPage({ params }: { params: Promise<{ id: st
             </CardContent>
           </Card>
 
-          {/* Contato */}
+          {/* Informações de Contato */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -231,33 +232,6 @@ export default function AlunoDetalhesPage({ params }: { params: Promise<{ id: st
                         <div>
                           <p className="text-sm text-muted-foreground">Email</p>
                           <p className="font-medium">{aluno.responsavel.email}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {aluno.contatoEmergencia && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-sm font-semibold mb-2">Contato de Emergência</p>
-                    <div className="space-y-2 pl-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Nome</p>
-                        <p className="font-medium">{aluno.contatoEmergencia.nome}</p>
-                      </div>
-                      {aluno.contatoEmergencia.telefone && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Telefone</p>
-                          <p className="font-medium">{aluno.contatoEmergencia.telefone}</p>
-                        </div>
-                      )}
-                      {aluno.contatoEmergencia.parentesco && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">Parentesco</p>
-                          <p className="font-medium capitalize">{aluno.contatoEmergencia.parentesco}</p>
                         </div>
                       )}
                     </div>
@@ -376,6 +350,66 @@ export default function AlunoDetalhesPage({ params }: { params: Promise<{ id: st
               )}
             </CardContent>
           </Card>
+
+          {/* Informações de Emergência */}
+          {(aluno.contatoEmergencia || aluno.alergias || aluno.deficiencias) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Informações de Emergência
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {aluno.contatoEmergencia && (
+                  <div>
+                    <p className="text-sm font-semibold mb-2">Contato de Emergência</p>
+                    <div className="space-y-2 pl-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nome</p>
+                        <p className="font-medium">{aluno.contatoEmergencia.nome}</p>
+                      </div>
+                      {aluno.contatoEmergencia.telefone && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Telefone</p>
+                          <p className="font-medium">{aluno.contatoEmergencia.telefone}</p>
+                        </div>
+                      )}
+                      {aluno.contatoEmergencia.parentesco && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Parentesco</p>
+                          <p className="font-medium capitalize">{aluno.contatoEmergencia.parentesco}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {(aluno.alergias || aluno.deficiencias) && (
+                  <>
+                    {aluno.contatoEmergencia && <Separator />}
+                    <div>
+                      <p className="text-sm font-semibold mb-2">Informações de Saúde</p>
+                      <div className="space-y-2 pl-4">
+                        {aluno.alergias && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Alergias</p>
+                            <p className="font-medium">{aluno.alergias}</p>
+                          </div>
+                        )}
+                        {aluno.deficiencias && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Deficiências</p>
+                            <p className="font-medium">{aluno.deficiencias}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Observações */}
           {aluno.observacoes && (

@@ -19,7 +19,8 @@ export default function CoordenadorLayout({
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [interessadosOpen, setInteressadosOpen] = useState(false);
 
   useEffect(() => {
@@ -37,6 +38,21 @@ export default function CoordenadorLayout({
     }
   }, [pathname]);
 
+  // Handle responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setSidebarOpen(true);
+      } else {
+        setSidebarOpen(false);
+      }
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (!user || (user.role !== 'coordenador' && user.role !== 'admin')) {
     return null;
   }
@@ -44,6 +60,16 @@ export default function CoordenadorLayout({
   const handleLogout = () => {
     logout();
     router.push('/');
+  };
+
+  const handleMenuToggle = () => {
+    if (window.innerWidth >= 1024) {
+      // Desktop: toggle collapsed state
+      setSidebarCollapsed(!sidebarCollapsed);
+    } else {
+      // Mobile: toggle open/close
+      setSidebarOpen(!sidebarOpen);
+    }
   };
 
   const menuItems = [
@@ -98,55 +124,74 @@ export default function CoordenadorLayout({
   ];
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-background overflow-hidden">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
         className={`${
-          sidebarOpen ? 'w-64' : 'w-0'
-        } transition-all duration-300 border-r bg-card overflow-hidden`}
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } ${
+          sidebarCollapsed ? 'lg:w-20' : 'lg:w-64'
+        } fixed lg:relative lg:translate-x-0 z-50 w-64 h-full transition-all duration-300 border-r bg-card`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-6 border-b">
+          <div className={`p-6 border-b ${sidebarCollapsed ? 'lg:p-4' : ''}`}>
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+              <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                 <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </div>
-              <div>
-                <h2 className="font-semibold text-sm">Sistema Acadêmico</h2>
-                <p className="text-xs text-muted-foreground">Coordenador</p>
-              </div>
+              {!sidebarCollapsed && (
+                <div className="lg:block">
+                  <h2 className="font-semibold text-sm">Sistema Acadêmico</h2>
+                  <p className="text-xs text-muted-foreground">Coordenador</p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* User Info */}
-          <div className="p-4 border-b">
+          <div className={`p-4 border-b ${sidebarCollapsed ? 'lg:p-2' : ''}`}>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <span className="text-sm font-semibold text-primary">
                   {user.nome.charAt(0)}
                 </span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{user.nome}</p>
-                <p className="text-xs text-muted-foreground truncate">{user.email}</p>
-              </div>
+              {!sidebarCollapsed && (
+                <div className="flex-1 min-w-0 lg:block">
+                  <p className="text-sm font-medium truncate">{user.nome}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Navigation */}
-          <ScrollArea className="flex-1 p-4">
+          <ScrollArea className={`flex-1 ${sidebarCollapsed ? 'lg:p-2' : 'p-4'}`}>
             <nav className="space-y-1">
               {menuItems.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
                 return (
-                  <Link key={item.href} href={item.href}>
+                  <Link key={item.href} href={item.href} onClick={() => {
+                    if (window.innerWidth < 1024) setSidebarOpen(false);
+                  }}>
                     <Button
                       variant="ghost"
-                      className={`w-full justify-start ${isActive ? 'bg-accent' : ''}`}
+                      className={`w-full ${isActive ? 'bg-accent' : ''} ${
+                        sidebarCollapsed ? 'lg:justify-center lg:px-2' : 'justify-start'
+                      }`}
+                      title={sidebarCollapsed ? item.title : undefined}
                     >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {item.title}
+                      <item.icon className={`h-4 w-4 ${sidebarCollapsed ? 'lg:mr-0' : 'mr-2'}`} />
+                      {!sidebarCollapsed && <span className="lg:inline">{item.title}</span>}
                     </Button>
                   </Link>
                 );
@@ -156,23 +201,32 @@ export default function CoordenadorLayout({
               <div>
                 <Button
                   variant="ghost"
-                  className={`w-full justify-start ${pathname.startsWith('/coordenador/interessados') ? 'bg-accent' : ''}`}
+                  className={`w-full ${pathname.startsWith('/coordenador/interessados') ? 'bg-accent' : ''} ${
+                    sidebarCollapsed ? 'lg:justify-center lg:px-2' : 'justify-start'
+                  }`}
                   onClick={() => setInteressadosOpen(!interessadosOpen)}
+                  title={sidebarCollapsed ? 'Interessados' : undefined}
                 >
-                  <Users className="mr-2 h-4 w-4" />
-                  Interessados
-                  {interessadosOpen ? (
-                    <ChevronDown className="ml-auto h-4 w-4" />
-                  ) : (
-                    <ChevronRight className="ml-auto h-4 w-4" />
+                  <Users className={`h-4 w-4 ${sidebarCollapsed ? 'lg:mr-0' : 'mr-2'}`} />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span className="lg:inline">Interessados</span>
+                      {interessadosOpen ? (
+                        <ChevronDown className="ml-auto h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="ml-auto h-4 w-4" />
+                      )}
+                    </>
                   )}
                 </Button>
-                {interessadosOpen && (
-                  <div className="ml-6 mt-1 space-y-1">
+                {interessadosOpen && !sidebarCollapsed && (
+                  <div className="ml-6 mt-1 space-y-1 lg:block">
                     {interessadosSubmenu.map((subItem) => {
                       const isSubActive = pathname === subItem.href;
                       return (
-                        <Link key={subItem.href} href={subItem.href}>
+                        <Link key={subItem.href} href={subItem.href} onClick={() => {
+                          if (window.innerWidth < 1024) setSidebarOpen(false);
+                        }}>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -193,14 +247,17 @@ export default function CoordenadorLayout({
           <Separator />
 
           {/* Logout */}
-          <div className="p-4">
+          <div className={`p-4 ${sidebarCollapsed ? 'lg:p-2' : ''}`}>
             <Button
               variant="ghost"
-              className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10"
+              className={`w-full text-destructive hover:text-destructive hover:bg-destructive/10 ${
+                sidebarCollapsed ? 'lg:justify-center lg:px-2' : 'justify-start'
+              }`}
               onClick={handleLogout}
+              title={sidebarCollapsed ? 'Sair' : undefined}
             >
-              <LogOut className="mr-2 h-4 w-4" />
-              Sair
+              <LogOut className={`h-4 w-4 ${sidebarCollapsed ? 'lg:mr-0' : 'mr-2'}`} />
+              {!sidebarCollapsed && <span className="lg:inline">Sair</span>}
             </Button>
           </div>
         </div>
@@ -208,22 +265,6 @@ export default function CoordenadorLayout({
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="border-b bg-card px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-2xl font-semibold">Coordenação Acadêmica</h1>
-            </div>
-          </div>
-        </header>
-
         {/* Content */}
         <main className="flex-1 overflow-auto bg-background p-6">
           {children}

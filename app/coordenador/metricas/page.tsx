@@ -22,11 +22,20 @@ import {
   Heart,
   Sparkles,
   Search,
+  UserCheck,
+  FileText,
+  Calendar,
+  CheckCircle,
 } from 'lucide-react';
 import { mockMetricasQualitativas, mockHistoriasAlunos } from '@/lib/mock-data';
+import { NeighborhoodChart } from '@/components/charts/NeighborhoodChart';
+import { GenderPieChart } from '@/components/charts/GenderPieChart';
+import { EthnicityChart } from '@/components/charts/EthnicityChart';
+import { StudentStatusChart } from '@/components/charts/StudentStatusChart';
+import { SatisfactionChart } from '@/components/charts/SatisfactionChart';
 
 export default function MetricasPage() {
-  const { alunos, interessados, turmas } = useData();
+  const { alunos, interessados, turmas, instrutores, diarios } = useData();
   const [searchAutor, setSearchAutor] = useState<string>('');
 
   // Quantitative Metrics Calculations
@@ -137,6 +146,69 @@ export default function MetricasPage() {
     );
   }
 
+  // Métricas dos Instrutores
+  const instrutoresAtivos = instrutores.filter(i => i.status === 'ativo');
+
+  const metricasInstrutores = instrutoresAtivos.map(instrutor => {
+    const turmasDoInstrutor = turmas.filter(t => t.instrutorId === instrutor.id);
+    const turmasAtivas = turmasDoInstrutor.filter(t => t.status === 'em_andamento');
+    const turmasFinalizadas = turmasDoInstrutor.filter(t => t.status === 'finalizada');
+
+    const diariosDoInstrutor = diarios.filter(d => d.instrutorId === instrutor.id);
+
+    // Calcular total de alunos
+    const totalAlunos = turmasDoInstrutor.reduce((sum, t) => sum + t.vagasOcupadas, 0);
+
+    // Calcular taxa de presença média
+    let totalPresencas = 0;
+    let totalRegistros = 0;
+
+    diariosDoInstrutor.forEach(diario => {
+      diario.presencas.forEach(presenca => {
+        totalRegistros++;
+        if (presenca.status === 'presente') {
+          totalPresencas++;
+        }
+      });
+    });
+
+    const taxaPresencaMedia = totalRegistros > 0
+      ? Math.round((totalPresencas / totalRegistros) * 100)
+      : 0;
+
+    // Diários lançados no último mês
+    const mesAtual = new Date().toISOString().slice(0, 7);
+    const diariosUltimoMes = diariosDoInstrutor.filter(d => d.data.startsWith(mesAtual)).length;
+
+    return {
+      id: instrutor.id,
+      nome: instrutor.nome,
+      turmasAtivas: turmasAtivas.length,
+      turmasFinalizadas: turmasFinalizadas.length,
+      totalTurmas: turmasDoInstrutor.length,
+      totalAlunos,
+      diariosLancados: diariosDoInstrutor.length,
+      diariosUltimoMes,
+      taxaPresencaMedia,
+      especialidades: instrutor.especialidades,
+    };
+  });
+
+  // Ordenar por performance (taxa de presença + diários lançados)
+  const instrutoresRanking = [...metricasInstrutores].sort((a, b) => {
+    const scoreA = a.taxaPresencaMedia + (a.diariosLancados * 0.5);
+    const scoreB = b.taxaPresencaMedia + (b.diariosLancados * 0.5);
+    return scoreB - scoreA;
+  });
+
+  // Média geral de presença
+  const mediaTaxaPresenca = metricasInstrutores.length > 0
+    ? Math.round(metricasInstrutores.reduce((sum, m) => sum + m.taxaPresencaMedia, 0) / metricasInstrutores.length)
+    : 0;
+
+  // Total de diários lançados
+  const totalDiarios = metricasInstrutores.reduce((sum, m) => sum + m.diariosLancados, 0);
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -203,6 +275,7 @@ export default function MetricasPage() {
         <TabsList>
           <TabsTrigger value="quantitativas">Métricas Quantitativas</TabsTrigger>
           <TabsTrigger value="qualitativas">Métricas Qualitativas</TabsTrigger>
+          <TabsTrigger value="instrutores">Desempenho dos Instrutores</TabsTrigger>
           <TabsTrigger value="historias">Histórias de Sucesso</TabsTrigger>
         </TabsList>
 
@@ -218,114 +291,40 @@ export default function MetricasPage() {
               <CardDescription>Distribuição geográfica dos alunos (Top 10)</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {bairroData.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    Nenhum dado de bairro disponível
-                  </p>
-                ) : (
-                  bairroData.map(([bairro, count]) => {
-                    const percentage = ((count / totalAlunos) * 100).toFixed(1);
-                    return (
-                      <div key={bairro} className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">{bairro}</span>
-                          <span className="text-muted-foreground">
-                            {count} aluno{count !== 1 ? 's' : ''} ({percentage}%)
-                          </span>
-                        </div>
-                        <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary transition-all"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+              <NeighborhoodChart bairroData={bairroData} totalAlunos={totalAlunos} />
             </CardContent>
           </Card>
 
-          {/* Alunos por Gênero */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Alunos por Gênero
-              </CardTitle>
-              <CardDescription>Distribuição de gênero dos alunos interessados</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {Object.keys(generoData).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    Nenhum dado de gênero disponível
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {Object.entries(generoData).map(([genero, count]) => {
-                      const percentage = interessadosAlunos.length > 0
-                        ? ((count / interessadosAlunos.length) * 100).toFixed(1)
-                        : '0';
-                      return (
-                        <div key={genero} className="border rounded-lg p-4 text-center">
-                          <p className="text-sm text-muted-foreground mb-2 capitalize">{genero}</p>
-                          <p className="text-5xl font-bold text-primary mb-3">{percentage}%</p>
-                          <p className="text-sm text-muted-foreground">{count} aluno{count !== 1 ? 's' : ''}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {/* Gênero e Etnia lado a lado */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Alunos por Gênero */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Alunos por Gênero
+                </CardTitle>
+                <CardDescription>Distribuição de gênero dos alunos interessados</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <GenderPieChart generoData={generoData} total={interessadosAlunos.length} />
+              </CardContent>
+            </Card>
 
-          {/* Alunos por Etnia/Cor-Raça */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Alunos por Etnia/Cor-Raça
-              </CardTitle>
-              <CardDescription>Distribuição étnica dos alunos interessados</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.keys(etniaData).length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    Nenhum dado de etnia disponível
-                  </p>
-                ) : (
-                  Object.entries(etniaData)
-                    .sort(([, a], [, b]) => b - a)
-                    .map(([etnia, count]) => {
-                      const percentage = interessadosAlunos.length > 0
-                        ? ((count / interessadosAlunos.length) * 100).toFixed(1)
-                        : '0';
-                      return (
-                        <div key={etnia} className="space-y-2">
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="font-medium capitalize">{etnia}</span>
-                            <span className="text-muted-foreground">
-                              {count} aluno{count !== 1 ? 's' : ''} ({percentage}%)
-                            </span>
-                          </div>
-                          <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-accent transition-all"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })
-                )}
-              </div>
-            </CardContent>
-          </Card>
+            {/* Alunos por Etnia/Cor-Raça */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Alunos por Etnia/Cor-Raça
+                </CardTitle>
+                <CardDescription>Distribuição étnica dos alunos interessados</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <EthnicityChart etniaData={etniaData} total={interessadosAlunos.length} />
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Status dos Alunos */}
           <Card>
@@ -337,25 +336,12 @@ export default function MetricasPage() {
               <CardDescription>Percentual de conclusão e evasão</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="border rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground mb-1">Ativos</p>
-                  <p className="text-3xl font-semibold text-blue-600 mb-1">{alunosAtivos}</p>
-                  <Badge variant="default">
-                    {totalMatriculados > 0 ? ((alunosAtivos / totalMatriculados) * 100).toFixed(1) : '0'}%
-                  </Badge>
-                </div>
-                <div className="border rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground mb-1">Concluídos</p>
-                  <p className="text-3xl font-semibold text-green-600 mb-1">{alunosConcluidos}</p>
-                  <Badge className="bg-green-600">{percentualConclusao}%</Badge>
-                </div>
-                <div className="border rounded-lg p-4">
-                  <p className="text-sm text-muted-foreground mb-1">Evadidos</p>
-                  <p className="text-3xl font-semibold text-orange-600 mb-1">{alunosEvadidos}</p>
-                  <Badge className="bg-orange-600">{percentualEvasao}%</Badge>
-                </div>
-              </div>
+              <StudentStatusChart
+                alunosAtivos={alunosAtivos}
+                alunosConcluidos={alunosConcluidos}
+                alunosEvadidos={alunosEvadidos}
+                totalMatriculados={totalMatriculados}
+              />
             </CardContent>
           </Card>
 
@@ -416,27 +402,7 @@ export default function MetricasPage() {
                   <p className="text-sm text-muted-foreground">Média de satisfação (de 1 a 5)</p>
                 </div>
                 <Separator />
-                <div className="space-y-3">
-                  {satisfacaoDistribuicao.reverse().map(({ nivel, count, percentage }) => (
-                    <div key={nivel} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{nivel} estrela{nivel !== 1 ? 's' : ''}</span>
-                          {'⭐'.repeat(nivel)}
-                        </div>
-                        <span className="text-muted-foreground">
-                          {count} resposta{count !== 1 ? 's' : ''} ({percentage}%)
-                        </span>
-                      </div>
-                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-yellow-500 transition-all"
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <SatisfactionChart satisfacaoDistribuicao={satisfacaoDistribuicao} />
               </div>
             </CardContent>
           </Card>
@@ -531,6 +497,201 @@ export default function MetricasPage() {
                   <p className="text-5xl font-bold text-accent mb-2">{percentualGraduacao}%</p>
                   <p className="text-xs text-muted-foreground">{interesseGraduacao} de {totalRespostas} alunos</p>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Instrutores Tab */}
+        <TabsContent value="instrutores" className="space-y-6">
+          {/* KPIs dos Instrutores */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Instrutores Ativos</p>
+                    <p className="text-2xl font-bold">{instrutoresAtivos.length}</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <UserCheck className="h-6 w-6 text-primary" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total de Diários</p>
+                    <p className="text-2xl font-bold">{totalDiarios}</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-accent/10 flex items-center justify-center">
+                    <FileText className="h-6 w-6 text-accent" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Taxa Média de Presença</p>
+                    <p className="text-2xl font-bold">{mediaTaxaPresenca}%</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center">
+                    <CheckCircle className="h-6 w-6 text-success" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Turmas em Andamento</p>
+                    <p className="text-2xl font-bold">{metricasInstrutores.reduce((sum, m) => sum + m.turmasAtivas, 0)}</p>
+                  </div>
+                  <div className="h-12 w-12 rounded-full bg-warning/10 flex items-center justify-center">
+                    <Calendar className="h-6 w-6 text-warning" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Ranking de Instrutores */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Award className="h-5 w-5" />
+                Ranking de Desempenho
+              </CardTitle>
+              <CardDescription>
+                Instrutores ordenados por taxa de presença e diários lançados
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {instrutoresRanking.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhum instrutor ativo no momento
+                  </div>
+                ) : (
+                  instrutoresRanking.map((instrutor, index) => (
+                    <div
+                      key={instrutor.id}
+                      className="flex items-center gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                    >
+                      {/* Posição */}
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-lg font-bold text-primary">#{index + 1}</span>
+                      </div>
+
+                      {/* Info do Instrutor */}
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{instrutor.nome}</h4>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1">
+                            <GraduationCapIcon className="h-4 w-4" />
+                            {instrutor.turmasAtivas} turmas ativas
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Users className="h-4 w-4" />
+                            {instrutor.totalAlunos} alunos
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Métricas */}
+                      <div className="flex gap-6 text-center">
+                        <div>
+                          <p className="text-2xl font-bold text-success">{instrutor.taxaPresencaMedia}%</p>
+                          <p className="text-xs text-muted-foreground">Presença</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-accent">{instrutor.diariosLancados}</p>
+                          <p className="text-xs text-muted-foreground">Diários</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-primary">{instrutor.diariosUltimoMes}</p>
+                          <p className="text-xs text-muted-foreground">Este mês</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Detalhamento por Instrutor */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Detalhamento por Instrutor
+              </CardTitle>
+              <CardDescription>
+                Estatísticas completas de cada instrutor
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-3 px-2 font-medium">Instrutor</th>
+                      <th className="text-center py-3 px-2 font-medium">Turmas Ativas</th>
+                      <th className="text-center py-3 px-2 font-medium">Turmas Finalizadas</th>
+                      <th className="text-center py-3 px-2 font-medium">Total Alunos</th>
+                      <th className="text-center py-3 px-2 font-medium">Taxa Presença</th>
+                      <th className="text-center py-3 px-2 font-medium">Diários</th>
+                      <th className="text-left py-3 px-2 font-medium">Especialidades</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metricasInstrutores.map((instrutor) => (
+                      <tr key={instrutor.id} className="border-b hover:bg-muted/50">
+                        <td className="py-3 px-2 font-medium">{instrutor.nome}</td>
+                        <td className="py-3 px-2 text-center">
+                          <Badge variant="default">{instrutor.turmasAtivas}</Badge>
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          <Badge variant="outline">{instrutor.turmasFinalizadas}</Badge>
+                        </td>
+                        <td className="py-3 px-2 text-center">{instrutor.totalAlunos}</td>
+                        <td className="py-3 px-2 text-center">
+                          <span className={`font-semibold ${
+                            instrutor.taxaPresencaMedia >= 80 ? 'text-success' :
+                            instrutor.taxaPresencaMedia >= 60 ? 'text-warning' :
+                            'text-destructive'
+                          }`}>
+                            {instrutor.taxaPresencaMedia}%
+                          </span>
+                        </td>
+                        <td className="py-3 px-2 text-center">{instrutor.diariosLancados}</td>
+                        <td className="py-3 px-2">
+                          <div className="flex flex-wrap gap-1">
+                            {instrutor.especialidades.slice(0, 2).map((esp, idx) => (
+                              <Badge key={idx} variant="outlinePrimary" className="text-xs">
+                                {esp}
+                              </Badge>
+                            ))}
+                            {instrutor.especialidades.length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{instrutor.especialidades.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </CardContent>
           </Card>

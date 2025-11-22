@@ -41,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('currentUser');
+    // TODO: If logout becomes async, use await or callback pattern
   };
 
   if (isLoading) {

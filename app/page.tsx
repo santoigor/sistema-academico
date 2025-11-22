@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { Button } from '@/components/ui/button';
@@ -18,14 +18,20 @@ export default function LoginPage() {
   const router = useRouter();
 
   // Redirecionar se já estiver logado
-  if (user) {
-    if (user.role === 'admin') {
-      router.push('/admin/painel');
-    } else if (user.role === 'coordenador') {
-      router.push('/coordenador/painel');
-    } else if (user.role === 'instrutor') {
-      router.push('/instrutor/painel');
+  useEffect(() => {
+    if (user) {
+      if (user.role === 'admin') {
+        router.push('/admin/painel');
+      } else if (user.role === 'coordenador') {
+        router.push('/coordenador/painel');
+      } else if (user.role === 'instrutor') {
+        router.push('/instrutor/painel');
+      }
     }
+  }, [user, router]);
+
+  // Não renderizar o formulário se já estiver logado
+  if (user) {
     return null;
   }
 

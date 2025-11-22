@@ -56,6 +56,17 @@ export const avaliacaoEmentaSchema = z.object({
 
 export type AvaliacaoEmentaFormData = z.infer<typeof avaliacaoEmentaSchema>;
 
+// Schema para Avaliação Realizada (lançamento de avaliação pelo instrutor/coordenador)
+export const avaliacaoRealizadaSchema = z.object({
+  titulo: z.string().min(3, 'Título deve ter pelo menos 3 caracteres'),
+  tipo: z.enum(['prova', 'trabalho', 'apresentacao', 'projeto', 'participacao']),
+  dataRealizacao: z.string().min(1, 'Data de realização é obrigatória'),
+  peso: z.number().min(0).max(100, 'Peso deve estar entre 0 e 100'),
+  descricao: z.string().optional(),
+});
+
+export type AvaliacaoRealizadaFormData = z.infer<typeof avaliacaoRealizadaSchema>;
+
 // Schema para Ementa
 export const ementaSchema = z.object({
   cursoId: z.string().min(1, 'Selecione um curso'),
@@ -197,6 +208,8 @@ export type CadastroVoluntarioFormData = z.infer<typeof cadastroVoluntarioSchema
 
 // Schema para Diário de Classe
 export const diarioAulaSchema = z.object({
+  aulaEmentaId: z.string().min(1, 'Selecione a aula da ementa'),
+  aulaTitulo: z.string().optional(), // Preenchido automaticamente
   data: z.string().min(1, 'Data é obrigatória'),
   numeroAula: z.number().min(1, 'Número da aula é obrigatório'),
   tipo: z.enum(['teorica', 'pratica', 'avaliacao', 'revisao']),

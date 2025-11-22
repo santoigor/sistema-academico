@@ -30,7 +30,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import type { Aluno, StatusAluno } from '@/lib/types';
+import type { StatusAluno } from '@/lib/types';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -99,7 +99,7 @@ export default function AlunosPage() {
             Gerencie todos os alunos matriculados
           </p>
         </div>
-        <Link href="/coordenador/alunos/novo">
+        <Link href="/coordenador/interessados/novo">
           <Button>
             <Plus className="h-4 w-4 mr-2" />
             Novo Aluno
@@ -225,7 +225,7 @@ export default function AlunosPage() {
                   : 'Comece cadastrando o primeiro aluno'}
               </p>
               {!searchTerm && statusFilter === 'all' && turmaFilter === 'all' && (
-                <Link href="/coordenador/alunos/novo">
+                <Link href="/coordenador/interessados/novo">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Cadastrar Primeiro Aluno

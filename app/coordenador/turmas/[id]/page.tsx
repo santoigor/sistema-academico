@@ -27,6 +27,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { AvaliacaoFormDialog } from '@/components/instrutor/AvaliacaoFormDialog';
+import { CancelamentoAulaDialog } from '@/components/coordenador/CancelamentoAulaDialog';
 import {
   ArrowLeft,
   Edit,
@@ -42,23 +44,28 @@ import {
   CalendarClock,
   UserMinus,
   GraduationCap as GraduationCapIcon,
+  ClipboardCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 import type { AulaEmenta } from '@/lib/types';
+import type { AvaliacaoRealizadaFormData } from '@/lib/schemas';
+import { useToast } from '@/hooks/use-toast';
 
 export default function TurmaDetalhesPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
-  const { getTurma, deleteTurma, updateTurma, getEmenta, alunos, instrutores } = useData();
+  const { getTurma, deleteTurma, updateTurma, getEmenta, alunos, instrutores, addAvaliacao } = useData();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showFinalizeDialog, setShowFinalizeDialog] = useState(false);
   const [showAddAvaliacaoDialog, setShowAddAvaliacaoDialog] = useState(false);
+  const [avaliacaoDialogOpen, setAvaliacaoDialogOpen] = useState(false);
   const [selectedAula, setSelectedAula] = useState<AulaEmenta | null>(null);
   const [showCancelAulaDialog, setShowCancelAulaDialog] = useState(false);
   const [showRescheduleDialog, setShowRescheduleDialog] = useState(false);
   const [newDate, setNewDate] = useState('');
   const [updateSubsequent, setUpdateSubsequent] = useState(false);
   const [showUnlinkInstrutorDialog, setShowUnlinkInstrutorDialog] = useState(false);
+  const { toast } = useToast();
 
   const turma = getTurma(resolvedParams.id);
   const ementa = turma ? getEmenta(turma.ementaId) : null;
@@ -122,6 +129,60 @@ export default function TurmaDetalhesPage({ params }: { params: Promise<{ id: st
       instrutor: 'Não alocado'
     });
     setShowUnlinkInstrutorDialog(false);
+  };
+
+  const handleLancarAvaliacao = (data: AvaliacaoRealizadaFormData) => {
+    try {
+      addAvaliacao({
+        ...data,
+        turmaId: turma.id,
+      });
+      toast({
+        title: 'Avaliação lançada com sucesso!',
+        description: `A avaliação "${data.titulo}" foi criada para a turma ${turma.codigo}`,
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao lançar avaliação',
+        description: 'Ocorreu um erro ao tentar criar a avaliação. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCancelamentoAula = (data: any) => {
+    if (!selectedAula) return;
+
+    try {
+      const novoCancelamento = {
+        aulaNumero: selectedAula.numero,
+        aulaTitulo: selectedAula.titulo,
+        data: data.data,
+        motivo: data.motivo,
+        justificativa: data.justificativa,
+        reposicao: data.reposicao,
+        canceladoPor: 'coordenador', // TODO: Usar ID do usuário logado
+        canceladoEm: new Date().toISOString(),
+      };
+
+      const aulasCanceladas = turma.aulasCanceladas || [];
+      updateTurma(turma.id, {
+        aulasCanceladas: [...aulasCanceladas, novoCancelamento],
+      });
+
+      toast({
+        title: 'Aula cancelada com sucesso!',
+        description: `A aula "${selectedAula.titulo}" foi cancelada. ${data.reposicao ? 'Reposição agendada para ' + new Date(data.reposicao.data).toLocaleDateString('pt-BR') : ''}`,
+      });
+
+      setSelectedAula(null);
+    } catch (error) {
+      toast({
+        title: 'Erro ao cancelar aula',
+        description: 'Ocorreu um erro ao tentar cancelar a aula. Tente novamente.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const canEdit = turma.status !== 'finalizada' && turma.status !== 'cancelada';
@@ -271,19 +332,6 @@ export default function TurmaDetalhesPage({ params }: { params: Promise<{ id: st
                       </li>
                     ))}
                   </ul>
-                </div>
-
-                {/* Botão Adicionar Avaliação */}
-                <div className="pt-4">
-                  <Button
-                    variant="outlinePrimary"
-                    size="sm"
-                    onClick={() => setShowAddAvaliacaoDialog(true)}
-                    className="w-full"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Avaliação
-                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -526,6 +574,14 @@ export default function TurmaDetalhesPage({ params }: { params: Promise<{ id: st
                     Editar Turma
                   </Button>
                 </Link>
+                <Button
+                  variant="accent"
+                  className="w-full"
+                  onClick={() => setAvaliacaoDialogOpen(true)}
+                >
+                  <ClipboardCheck className="h-4 w-4 mr-2" />
+                  Lançar Avaliação
+                </Button>
                 {canFinalize && (
                   <Button
                     variant="accent"
@@ -636,37 +692,12 @@ export default function TurmaDetalhesPage({ params }: { params: Promise<{ id: st
       </Dialog>
 
       {/* Dialog Cancelar Aula */}
-      <AlertDialog open={showCancelAulaDialog} onOpenChange={setShowCancelAulaDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar Aula</AlertDialogTitle>
-            <AlertDialogDescription>
-              {selectedAula && (
-                <>
-                  Tem certeza que deseja cancelar a <strong>Aula {selectedAula.numero}: {selectedAula.titulo}</strong>?
-                  <br />
-                  Esta ação registrará o cancelamento no histórico da turma.
-                </>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedAula(null)}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                // TODO: Implementar lógica de cancelamento
-                setShowCancelAulaDialog(false);
-                setSelectedAula(null);
-              }}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Confirmar Cancelamento
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CancelamentoAulaDialog
+        open={showCancelAulaDialog}
+        onOpenChange={setShowCancelAulaDialog}
+        onSubmit={handleCancelamentoAula}
+        aula={selectedAula}
+      />
 
       {/* Dialog Reagendar Aula */}
       <Dialog open={showRescheduleDialog} onOpenChange={setShowRescheduleDialog}>
@@ -755,6 +786,13 @@ export default function TurmaDetalhesPage({ params }: { params: Promise<{ id: st
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog para Lançar Avaliação */}
+      <AvaliacaoFormDialog
+        open={avaliacaoDialogOpen}
+        onOpenChange={setAvaliacaoDialogOpen}
+        onSubmit={handleLancarAvaliacao}
+      />
     </div>
   );
 }

@@ -17,7 +17,6 @@ import {
   FileText,
   Download,
   Calendar,
-  GraduationCap,
   Award,
   FileCheck,
   Loader2,
@@ -132,7 +131,7 @@ export default function RelatoriosPage() {
       doc.setFont('helvetica', 'normal');
       doc.text(`Instrutor: ${instrutor?.nome || 'Não alocado'}`, 14, yPosition);
       yPosition += 5;
-      doc.text(`Curso: ${ementa?.nome || 'Não informado'}`, 14, yPosition);
+      doc.text(`Curso: ${ementa?.titulo || 'Não informado'}`, 14, yPosition);
       yPosition += 5;
       doc.text(`Turma: ${turma.codigo}`, 14, yPosition);
       yPosition += 5;
@@ -207,16 +206,8 @@ export default function RelatoriosPage() {
             ? new Date().getFullYear() - new Date(a.dataNascimento).getFullYear()
             : '-';
 
-          const generoMap: Record<string, string> = {
-            masculino: 'M',
-            feminino: 'F',
-            outro: 'Outro',
-            prefiro_nao_informar: 'N/I',
-          };
-
           return [
             a.nome,
-            a.genero ? generoMap[a.genero] || a.genero : 'N/I',
             dataNascimento,
             idade.toString(),
             new Date(a.dataMatricula + 'T00:00:00').toLocaleDateString('pt-BR'),
@@ -225,16 +216,15 @@ export default function RelatoriosPage() {
 
         autoTable(doc, {
           startY: yPosition,
-          head: [['Nome', 'Gênero', 'Data Nascimento', 'Idade', 'Data Matrícula']],
+          head: [['Nome', 'Data Nascimento', 'Idade', 'Data Matrícula']],
           body: alunosData,
           theme: 'grid',
           headStyles: { fillColor: [44, 82, 130] },
           columnStyles: {
-            0: { cellWidth: 70 },
-            1: { cellWidth: 25 },
-            2: { cellWidth: 35 },
-            3: { cellWidth: 20 },
-            4: { cellWidth: 35 },
+            0: { cellWidth: 80 },
+            1: { cellWidth: 40 },
+            2: { cellWidth: 25 },
+            3: { cellWidth: 40 },
           },
         });
       }
@@ -308,7 +298,7 @@ export default function RelatoriosPage() {
       yPosition += 7;
 
       doc.setFont('helvetica', 'bold');
-      doc.text(`${ementa?.nome || 'Não informado'}`, 105, yPosition, { align: 'center' });
+      doc.text(`${ementa?.titulo || 'Não informado'}`, 105, yPosition, { align: 'center' });
       yPosition += 7;
 
       doc.setFont('helvetica', 'normal');
@@ -321,7 +311,7 @@ export default function RelatoriosPage() {
         );
         yPosition += 7;
 
-        doc.text(`com carga horária total de ${ementa?.cargaHoraria || 0} horas.`, 105, yPosition, { align: 'center' });
+        doc.text(`com carga horária total de ${ementa?.cargaHorariaTotal || 0} horas.`, 105, yPosition, { align: 'center' });
       }
       yPosition += 25;
 
@@ -389,7 +379,7 @@ export default function RelatoriosPage() {
       yPosition += 7;
 
       doc.setFont('helvetica', 'bold');
-      doc.text(`${ementa?.nome || 'Não informado'}`, 105, yPosition, { align: 'center' });
+      doc.text(`${ementa?.titulo || 'Não informado'}`, 105, yPosition, { align: 'center' });
       yPosition += 7;
 
       doc.setFont('helvetica', 'normal');
@@ -405,7 +395,7 @@ export default function RelatoriosPage() {
         );
         yPosition += 7;
 
-        doc.text(`Carga horária: ${ementa?.cargaHoraria || 0} horas`, 105, yPosition, { align: 'center' });
+        doc.text(`Carga horária: ${ementa?.cargaHorariaTotal || 0} horas`, 105, yPosition, { align: 'center' });
         yPosition += 7;
       }
 
@@ -473,11 +463,14 @@ export default function RelatoriosPage() {
                   <SelectValue placeholder="Selecione uma turma" />
                 </SelectTrigger>
                 <SelectContent>
-                  {turmas.map((turma) => (
-                    <SelectItem key={turma.id} value={turma.id}>
-                      {turma.codigo} - {turma.ementa}
-                    </SelectItem>
-                  ))}
+                  {turmas.map((turma) => {
+                    const ementa = ementas.find(e => e.id === turma.ementaId);
+                    return (
+                      <SelectItem key={turma.id} value={turma.id}>
+                        {turma.codigo} - {ementa?.titulo || 'Curso não definido'}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
