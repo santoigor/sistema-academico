@@ -7,38 +7,23 @@ import { Card } from '@/components/ui/card';
 import type { InstrutorFormData } from '@/lib/schemas';
 
 export default function CadastroInstrutorPublico() {
-  const { addUsuario, addInstrutor } = useData();
+  const { addInstrutor } = useData();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cadastroCompleto, setCadastroCompleto] = useState(false);
 
   const handleSubmit = async (data: InstrutorFormData) => {
     setIsSubmitting(true);
     try {
-      // Criar o usuário
-      const novoUsuario = {
-        id: Date.now().toString(),
+      // Criar o instrutor (que ja inclui os dados de usuario)
+      addInstrutor({
         nome: data.nome,
         email: data.email,
         telefone: data.telefone,
-        role: 'instrutor' as const,
-        status: 'ativo' as const,
-        dataCadastro: new Date().toISOString(),
-        dataAtualizacao: new Date().toISOString(),
-      };
-
-      addUsuario(novoUsuario);
-
-      // Criar o instrutor com dados adicionais
-      const novoInstrutor = {
-        id: `inst-${Date.now()}`,
-        usuarioId: novoUsuario.id,
+        status: 'ativo',
         especialidades: data.especialidades,
         biografia: data.biografia,
-        dataCriacao: new Date().toISOString(),
-        dataAtualizacao: new Date().toISOString(),
-      };
+      });
 
-      addInstrutor(novoInstrutor);
       setCadastroCompleto(true);
     } finally {
       setIsSubmitting(false);
@@ -58,10 +43,10 @@ export default function CadastroInstrutorPublico() {
             Cadastro realizado com sucesso!
           </h1>
           <p className="text-gray-600 mb-6">
-            Obrigado por se cadastrar como instrutor! Em breve entraremos em contato para validar suas informações.
+            Obrigado por se cadastrar como instrutor! Em breve entraremos em contato para validar suas informacoes.
           </p>
           <p className="text-sm text-muted-foreground">
-            Você pode fechar esta página agora.
+            Voce pode fechar esta pagina agora.
           </p>
         </Card>
       </div>
@@ -77,7 +62,7 @@ export default function CadastroInstrutorPublico() {
             Cadastro de Instrutor
           </h1>
           <p className="text-lg text-gray-600">
-            Junte-se à nossa equipe de instrutores
+            Junte-se a nossa equipe de instrutores
           </p>
         </div>
 
