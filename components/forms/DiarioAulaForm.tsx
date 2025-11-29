@@ -51,6 +51,11 @@ export function DiarioAulaForm({
     initialData?.aulaEmentaId || ''
   );
 
+  // Estado para ações em lote
+  const [batchStatus, setBatchStatus] = useState<StatusPresenca>('presente');
+  const [batchJustificativa, setBatchJustificativa] = useState('');
+  const [showBatchToolbar, setShowBatchToolbar] = useState(false);
+
   const selectedAula = aulas.find((a) => a.id === selectedAulaId);
 
   // Calcular próximo número de aula
@@ -105,6 +110,18 @@ export function DiarioAulaForm({
     const updatedPresencas = presencas.map((p) =>
       p.alunoId === alunoId ? { ...p, [field]: value } : p
     );
+    setValue('presencas', updatedPresencas);
+  };
+
+  // Aplicar status e justificativa em lote para todos os alunos
+  const handleApplyBatch = () => {
+    const updatedPresencas = presencas.map((p) => ({
+      ...p,
+      status: batchStatus,
+      justificativa: (batchStatus === 'justificado' || batchStatus === 'abonado')
+        ? batchJustificativa
+        : '',
+    }));
     setValue('presencas', updatedPresencas);
   };
 
@@ -250,7 +267,83 @@ export function DiarioAulaForm({
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
+              {/* Barra de Ações em Lote */}
+              <div className="bg-muted/50 border rounded-lg">
+                {/* Cabeçalho com botão toggle */}
+                <button
+                  type="button"
+                  onClick={() => setShowBatchToolbar(!showBatchToolbar)}
+                  className="w-full flex items-center justify-between p-4 hover:bg-muted/70 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Ações em Lote</span>
+                  </div>
+                  <svg
+                    className={`w-5 h-5 transition-transform ${showBatchToolbar ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Conteúdo expansível */}
+                {showBatchToolbar && (
+                  <div className="p-4 pt-0 border-t">
+                    <div className="flex flex-col md:flex-row md:items-end gap-3">
+                      <div className="flex-1">
+                        <Label htmlFor="batch-status" className="text-sm font-medium mb-2">
+                          Status Mestre
+                        </Label>
+                        <Select
+                          value={batchStatus}
+                          onValueChange={(value) => setBatchStatus(value as StatusPresenca)}
+                        >
+                          <SelectTrigger id="batch-status">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="presente">Presente</SelectItem>
+                            <SelectItem value="ausente">Ausente</SelectItem>
+                            <SelectItem value="justificado">Justificado</SelectItem>
+                            <SelectItem value="abonado">Abonado</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex-1 md:flex-[2]">
+                        <Label htmlFor="batch-justificativa" className="text-sm font-medium mb-2">
+                          Justificativa/Observação
+                        </Label>
+                        <Input
+                          id="batch-justificativa"
+                          placeholder={
+                            batchStatus === 'justificado' || batchStatus === 'abonado'
+                              ? 'Ex: Chuvas fortes, Evento da escola, etc.'
+                              : 'Disponível para Justificado ou Abonado'
+                          }
+                          value={batchJustificativa}
+                          onChange={(e) => setBatchJustificativa(e.target.value)}
+                          disabled={batchStatus !== 'justificado' && batchStatus !== 'abonado'}
+                        />
+                      </div>
+
+                      <Button
+                        type="button"
+                        onClick={handleApplyBatch}
+                        variant="accent"
+                        className="w-full md:w-auto md:shrink-0"
+                      >
+                        Aplicar a Todos
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Tabela de Presença */}
               <div className="border rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
