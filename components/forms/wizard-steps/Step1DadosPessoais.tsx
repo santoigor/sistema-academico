@@ -4,13 +4,13 @@ import { UseFormRegister, FieldErrors, UseFormSetValue } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { InteressadoFormData } from '@/lib/schemas';
+import type { CadastroAlunoInteressadoFormData } from '@/lib/schemas';
 import type { Curso } from '@/lib/types';
 
 interface Step1DadosPessoaisProps {
-  register: UseFormRegister<InteressadoFormData>;
-  errors: FieldErrors<InteressadoFormData>;
-  setValue: UseFormSetValue<InteressadoFormData>;
+  register: UseFormRegister<CadastroAlunoInteressadoFormData>;
+  errors: FieldErrors<CadastroAlunoInteressadoFormData>;
+  setValue: UseFormSetValue<CadastroAlunoInteressadoFormData>;
   cursos: Curso[];
 }
 

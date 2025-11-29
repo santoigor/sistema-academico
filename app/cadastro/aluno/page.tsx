@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useData } from '@/lib/data-context';
 import { StudentRegistrationWizard } from '@/components/forms/StudentRegistrationWizard';
 import { Card } from '@/components/ui/card';
-import type { InteressadoFormData } from '@/lib/schemas';
+import type { CadastroAlunoInteressadoFormData } from '@/lib/schemas';
 import type { Interessado } from '@/lib/types';
 
 export default function CadastroAlunoPublico() {
@@ -12,7 +12,7 @@ export default function CadastroAlunoPublico() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cadastroCompleto, setCadastroCompleto] = useState(false);
 
-  const handleSubmit = async (data: InteressadoFormData, turmaId?: string) => {
+  const handleSubmit = async (data: CadastroAlunoInteressadoFormData, turmaId?: string) => {
     setIsSubmitting(true);
     // turmaId não é usado na versão pública do formulário
     try {
@@ -40,8 +40,8 @@ export default function CadastroAlunoPublico() {
         responsavel: data.responsavelNome ? {
           nome: data.responsavelNome,
           parentesco: data.responsavelParentesco || '',
-          telefone: data.responsavelTelefone || '',
-          email: data.responsavelEmail || '',
+          telefone: data.responsavelTelefone,
+          email: data.responsavelEmail,
         } : undefined,
         contatoEmergencia: {
           nome: data.contatoEmergenciaNome,
@@ -54,6 +54,7 @@ export default function CadastroAlunoPublico() {
         deficiencias: data.deficiencias,
         informacoesCorretas: data.informacoesCorretas,
         documentosEntregues: data.documentos,
+        observacoes: data.observacoes,
         status: 'novo',
         dataRegistro: new Date().toISOString().split('T')[0],
       };
@@ -75,10 +76,10 @@ export default function CadastroAlunoPublico() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Cadastro realizado com sucesso!
+            Cadastro recebido com sucesso!
           </h1>
           <p className="text-gray-600 mb-6">
-            Obrigado por se inscrever! Sua solicitação foi recebida e em breve entraremos em contato.
+            Por favor, aguarde nosso contato via WhatsApp para os próximos passos.
           </p>
           <p className="text-sm text-muted-foreground">
             Você pode fechar esta página agora.
@@ -107,6 +108,7 @@ export default function CadastroAlunoPublico() {
             cursos={cursos}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
+            isExternal={true}
           />
         </Card>
       </div>

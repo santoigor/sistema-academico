@@ -221,6 +221,8 @@ export interface Interessado {
   responsavel?: {
     nome: string;
     parentesco: string;
+    telefone?: string;
+    email?: string;
   };
   contatoEmergencia?: {
     nome: string;

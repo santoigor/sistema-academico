@@ -152,6 +152,8 @@ export const cadastroAlunoInteressadoSchema = z.object({
   }),
   responsavelNome: z.string().optional(),
   responsavelParentesco: z.string().optional(),
+  responsavelTelefone: z.string().optional(),
+  responsavelEmail: z.string().optional(),
   contatoEmergenciaNome: z.string().min(3, 'Nome do contato de emergência é obrigatório'),
   contatoEmergenciaTelefone: z.string().min(10, 'Telefone do contato de emergência é obrigatório'),
   contatoEmergenciaParentesco: z.string().min(1, 'Parentesco do contato de emergência é obrigatório'),
@@ -167,7 +169,9 @@ export const cadastroAlunoInteressadoSchema = z.object({
     comprovanteEscolaridade: z.boolean(),
     comprovanteResidencia: z.boolean(),
     outro: z.boolean(),
+    outroDescricao: z.string().optional(),
   }),
+  observacoes: z.string().optional(),
 });
 
 export type CadastroAlunoInteressadoFormData = z.infer<typeof cadastroAlunoInteressadoSchema>;

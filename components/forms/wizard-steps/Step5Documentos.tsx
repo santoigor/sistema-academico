@@ -6,12 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FileText, CheckCircle2 } from 'lucide-react';
-import type { InteressadoFormData } from '@/lib/schemas';
+import type { CadastroAlunoInteressadoFormData } from '@/lib/schemas';
 
 interface Step5DocumentosProps {
-  register: UseFormRegister<InteressadoFormData>;
-  setValue: UseFormSetValue<InteressadoFormData>;
-  watch: UseFormWatch<InteressadoFormData>;
+  register: UseFormRegister<CadastroAlunoInteressadoFormData>;
+  setValue: UseFormSetValue<CadastroAlunoInteressadoFormData>;
+  watch: UseFormWatch<CadastroAlunoInteressadoFormData>;
 }
 
 export function Step5Documentos({ register, setValue, watch }: Step5DocumentosProps) {

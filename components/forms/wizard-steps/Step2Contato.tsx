@@ -4,11 +4,11 @@ import { UseFormRegister, FieldErrors } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { MapPin } from 'lucide-react';
-import type { InteressadoFormData } from '@/lib/schemas';
+import type { CadastroAlunoInteressadoFormData } from '@/lib/schemas';
 
 interface Step2ContatoProps {
-  register: UseFormRegister<InteressadoFormData>;
-  errors: FieldErrors<InteressadoFormData>;
+  register: UseFormRegister<CadastroAlunoInteressadoFormData>;
+  errors: FieldErrors<CadastroAlunoInteressadoFormData>;
 }
 
 export function Step2Contato({ register, errors }: Step2ContatoProps) {

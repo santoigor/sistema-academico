@@ -4,11 +4,11 @@ import { UseFormRegister, FieldErrors } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Users, AlertCircle } from 'lucide-react';
-import type { InteressadoFormData } from '@/lib/schemas';
+import type { CadastroAlunoInteressadoFormData } from '@/lib/schemas';
 
 interface Step3ContextoSocialProps {
-  register: UseFormRegister<InteressadoFormData>;
-  errors: FieldErrors<InteressadoFormData>;
+  register: UseFormRegister<CadastroAlunoInteressadoFormData>;
+  errors: FieldErrors<CadastroAlunoInteressadoFormData>;
 }
 
 export function Step3ContextoSocial({ register, errors }: Step3ContextoSocialProps) {

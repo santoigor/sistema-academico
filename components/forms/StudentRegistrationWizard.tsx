@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { interessadoSchema, type InteressadoFormData } from '@/lib/schemas';
+import { cadastroAlunoInteressadoSchema, type CadastroAlunoInteressadoFormData } from '@/lib/schemas';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react';
@@ -18,11 +18,12 @@ import { Step6VincularTurma } from './wizard-steps/Step6VincularTurma';
 interface StudentRegistrationWizardProps {
   cursos: Curso[];
   turmas?: Turma[];
-  onSubmit: (data: InteressadoFormData, turmaId?: string) => void;
+  onSubmit: (data: CadastroAlunoInteressadoFormData, turmaId?: string) => void;
   isSubmitting: boolean;
+  isExternal?: boolean;
 }
 
-const STEPS = [
+const ALL_STEPS = [
   { id: 1, title: 'Quem é', description: 'Dados pessoais' },
   { id: 2, title: 'Contato', description: 'Endereço' },
   { id: 3, title: 'Contexto Social', description: 'Responsável e emergência' },
@@ -31,12 +32,21 @@ const STEPS = [
   { id: 6, title: 'Vincular Turma', description: 'Opcional' },
 ];
 
+const EXTERNAL_STEPS = [
+  { id: 1, title: 'Quem é', description: 'Dados pessoais' },
+  { id: 2, title: 'Contato', description: 'Endereço' },
+  { id: 3, title: 'Contexto Social', description: 'Responsável e emergência' },
+  { id: 4, title: 'Saúde', description: 'Informações de saúde' },
+];
+
 export function StudentRegistrationWizard({
   cursos,
   turmas = [],
   onSubmit,
   isSubmitting,
+  isExternal = false,
 }: StudentRegistrationWizardProps) {
+  const STEPS = isExternal ? EXTERNAL_STEPS : ALL_STEPS;
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [selectedTurmaId, setSelectedTurmaId] = useState<string | undefined>(undefined);
@@ -48,8 +58,8 @@ export function StudentRegistrationWizard({
     trigger,
     watch,
     setValue,
-  } = useForm<InteressadoFormData>({
-    resolver: zodResolver(interessadoSchema),
+  } = useForm<CadastroAlunoInteressadoFormData>({
+    resolver: zodResolver(cadastroAlunoInteressadoSchema),
     mode: 'onChange',
   });
 
