@@ -120,21 +120,6 @@ export interface ResultadoAvaliacao {
   dataAvaliacao?: string;
 }
 
-// Aula Cancelada
-export interface AulaCancelada {
-  aulaNumero: number;
-  aulaTitulo: string;
-  data: string;
-  motivo: string;
-  justificativa: string;
-  reposicao?: {
-    data: string;
-    horario: string;
-  };
-  canceladoPor: string; // ID do usuário que cancelou
-  canceladoEm: string; // Timestamp do cancelamento
-}
-
 // Turma
 export interface Turma {
   id: string;

@@ -20,6 +20,14 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -47,7 +55,7 @@ import {
   ClipboardCheck,
 } from 'lucide-react';
 import Link from 'next/link';
-import type { AulaEmenta } from '@/lib/types';
+import type { AulaEmenta, AulaCancelada } from '@/lib/types';
 import type { AvaliacaoRealizadaFormData } from '@/lib/schemas';
 import { useToast } from '@/hooks/use-toast';
 
@@ -154,15 +162,15 @@ export default function TurmaDetalhesPage({ params }: { params: Promise<{ id: st
     if (!selectedAula) return;
 
     try {
-      const novoCancelamento = {
-        aulaNumero: selectedAula.numero,
-        aulaTitulo: selectedAula.titulo,
+      const novoCancelamento: AulaCancelada = {
+        id: `cancelamento-${Date.now()}`,
+        turmaId: turma.id,
         data: data.data,
         motivo: data.motivo,
         justificativa: data.justificativa,
         reposicao: data.reposicao,
         canceladoPor: 'coordenador', // TODO: Usar ID do usuário logado
-        canceladoEm: new Date().toISOString(),
+        dataCancelamento: new Date().toISOString(),
       };
 
       const aulasCanceladas = turma.aulasCanceladas || [];
@@ -484,37 +492,45 @@ export default function TurmaDetalhesPage({ params }: { params: Promise<{ id: st
                 </Link>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {alunosDaTurma.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Nenhum aluno matriculado ainda</p>
+                <div className="text-center py-12 px-6">
+                  <Users className="h-12 w-12 mx-auto mb-2 opacity-50 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Nenhum aluno matriculado ainda</p>
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {alunosDaTurma.map((aluno) => (
-                    <div
-                      key={aluno.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div>
-                        <p className="font-medium text-sm">{aluno.nome}</p>
-                        <p className="text-xs text-muted-foreground">{aluno.email}</p>
-                      </div>
-                      <Badge
-                        variant={
-                          aluno.status === 'ativo'
-                            ? 'accent'
-                            : aluno.status === 'concluido'
-                            ? 'success'
-                            : 'destructive'
-                        }
-                      >
-                        {aluno.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>CPF</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {alunosDaTurma.map((aluno) => (
+                      <TableRow key={aluno.id}>
+                        <TableCell className="font-medium">{aluno.nome}</TableCell>
+                        <TableCell className="text-muted-foreground">{aluno.email}</TableCell>
+                        <TableCell className="text-muted-foreground">{aluno.cpf}</TableCell>
+                        <TableCell className="text-right">
+                          <Badge
+                            variant={
+                              aluno.status === 'ativo'
+                                ? 'accent'
+                                : aluno.status === 'concluido'
+                                ? 'success'
+                                : 'destructive'
+                            }
+                          >
+                            {aluno.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
