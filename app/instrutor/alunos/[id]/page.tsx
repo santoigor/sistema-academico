@@ -9,18 +9,17 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { HistoricoAlunoView } from '@/components/instrutor/HistoricoAlunoView';
 import { AnotacaoAlunoForm } from '@/components/forms/AnotacaoAlunoForm';
-import { ArrowLeft, User, Mail, Phone, Calendar, MapPin, FileText, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Calendar, FileText, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import type { AnotacaoAlunoFormData } from '@/lib/schemas';
 import type { Instrutor } from '@/lib/types';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AlunoPerfilPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const { alunos, turmas, diarios, anotacoes, addAnotacao, getAnotacoesByAluno } = useData();
+  const { alunos, turmas, diarios, addAnotacao, getAnotacoesByAluno } = useData();
   const { toast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -110,215 +109,255 @@ export default function AlunoPerfilPage() {
     evadido: 'destructive',
   } as const;
 
+  const statusLabels = {
+    ativo: 'Ativo',
+    inativo: 'Inativo',
+    concluido: 'Concluído',
+    evadido: 'Evadido',
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <Button variant="ghost" size="sm" className="mb-4" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Voltar
-        </Button>
-
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-4">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <span className="text-2xl font-semibold text-primary">
-                {aluno.nome.charAt(0)}
-              </span>
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">{aluno.nome}</h2>
-              <p className="text-muted-foreground mt-1">
-                {turmaDoAluno?.codigo} - {turmaDoAluno?.ementa}
-              </p>
-            </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-semibold text-foreground">{aluno.nome}</h1>
+            <p className="text-muted-foreground mt-1">Perfil do aluno</p>
           </div>
-          <Badge variant={statusColors[aluno.status]}>{aluno.status}</Badge>
         </div>
+        <Badge variant={statusColors[aluno.status]} className="text-sm px-3 py-1">
+          {statusLabels[aluno.status]}
+        </Badge>
       </div>
 
-      {/* Informações do Aluno */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Informações do Aluno</CardTitle>
-          <CardDescription>Dados pessoais e contato</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="contato" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="contato">Contato</TabsTrigger>
-              <TabsTrigger value="emergencia">Informações de Emergência</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="contato" className="space-y-4 mt-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="flex items-start gap-3">
-                  <Mail className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Email</p>
-                    <p className="text-sm text-muted-foreground">{aluno.email}</p>
-                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Informações Básicas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Informações Básicas
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">Nome Completo</p>
+                  <p className="font-medium">{aluno.nome}</p>
                 </div>
-
-                <div className="flex items-start gap-3">
-                  <Phone className="h-5 w-5 text-muted-foreground" />
+                {aluno.cpf && (
                   <div>
-                    <p className="text-sm font-medium">Telefone</p>
-                    <p className="text-sm text-muted-foreground">{aluno.telefone}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <User className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">CPF</p>
-                    <p className="text-sm text-muted-foreground">{aluno.cpf}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-3">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium">Data de Nascimento</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(aluno.dataNascimento).toLocaleDateString('pt-BR')}
-                    </p>
-                  </div>
-                </div>
-
-                {aluno.endereco && (
-                  <div className="flex items-start gap-3 md:col-span-2">
-                    <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium">Endereço</p>
-                      <p className="text-sm text-muted-foreground">
-                        {aluno.endereco.rua}, {aluno.endereco.numero}
-                        {aluno.endereco.complemento && ` - ${aluno.endereco.complemento}`}
-                        <br />
-                        {aluno.endereco.bairro} - {aluno.endereco.cidade}/{aluno.endereco.estado}
-                        <br />
-                        CEP: {aluno.endereco.cep}
-                      </p>
-                    </div>
+                    <p className="text-sm text-muted-foreground">CPF</p>
+                    <p className="font-medium">{aluno.cpf}</p>
                   </div>
                 )}
+                {aluno.dataNascimento && (
+                  <div>
+                    <p className="text-sm text-muted-foreground">Data de Nascimento</p>
+                    <p className="font-medium">
+                      {new Date(aluno.dataNascimento + 'T00:00:00').toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <p className="text-sm text-muted-foreground">Data de Matrícula</p>
+                  <p className="font-medium">
+                    {new Date(aluno.dataMatricula + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Informações de Contato */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Phone className="h-5 w-5" />
+                Informações de Contato
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Email</p>
+                  <p className="font-medium">{aluno.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm text-muted-foreground">Telefone</p>
+                  <p className="font-medium">{aluno.telefone}</p>
+                </div>
               </div>
 
               {aluno.responsavel && (
                 <>
                   <Separator />
                   <div>
-                    <p className="text-sm font-medium mb-2">Responsável</p>
-                    <div className="grid gap-2 md:grid-cols-2 pl-4">
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Nome:</strong> {aluno.responsavel.nome}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Parentesco:</strong> {aluno.responsavel.parentesco}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Telefone:</strong> {aluno.responsavel.telefone}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        <strong>Email:</strong> {aluno.responsavel.email}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {aluno.observacoes && (
-                <>
-                  <Separator />
-                  <div>
-                    <p className="text-sm font-medium mb-1">Observações</p>
-                    <p className="text-sm text-muted-foreground">{aluno.observacoes}</p>
-                  </div>
-                </>
-              )}
-            </TabsContent>
-
-            <TabsContent value="emergencia" className="space-y-4 mt-4">
-              {aluno.contatoEmergencia && (
-                <div>
-                  <p className="text-sm font-semibold mb-2">Contato de Emergência</p>
-                  <div className="space-y-2 pl-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Nome</p>
-                      <p className="font-medium">{aluno.contatoEmergencia.nome}</p>
-                    </div>
-                    {aluno.contatoEmergencia.telefone && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Telefone</p>
-                        <p className="font-medium">{aluno.contatoEmergencia.telefone}</p>
-                      </div>
-                    )}
-                    {aluno.contatoEmergencia.parentesco && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Parentesco</p>
-                        <p className="font-medium capitalize">{aluno.contatoEmergencia.parentesco}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {(aluno.alergias || aluno.deficiencias) && (
-                <>
-                  {aluno.contatoEmergencia && <Separator />}
-                  <div>
-                    <p className="text-sm font-semibold mb-2">Informações de Saúde</p>
+                    <p className="text-sm font-semibold mb-2">Responsável</p>
                     <div className="space-y-2 pl-4">
-                      {aluno.alergias && (
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nome</p>
+                        <p className="font-medium">{aluno.responsavel.nome}</p>
+                      </div>
+                      {aluno.responsavel.parentesco && (
                         <div>
-                          <p className="text-sm text-muted-foreground">Alergias</p>
-                          <p className="font-medium">{aluno.alergias}</p>
+                          <p className="text-sm text-muted-foreground">Parentesco</p>
+                          <p className="font-medium capitalize">{aluno.responsavel.parentesco}</p>
                         </div>
                       )}
-                      {aluno.deficiencias && (
+                      {aluno.responsavel.telefone && (
                         <div>
-                          <p className="text-sm text-muted-foreground">Deficiências</p>
-                          <p className="font-medium">{aluno.deficiencias}</p>
+                          <p className="text-sm text-muted-foreground">Telefone</p>
+                          <p className="font-medium">{aluno.responsavel.telefone}</p>
+                        </div>
+                      )}
+                      {aluno.responsavel.email && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Email</p>
+                          <p className="font-medium">{aluno.responsavel.email}</p>
                         </div>
                       )}
                     </div>
                   </div>
                 </>
               )}
+            </CardContent>
+          </Card>
 
-              {!aluno.contatoEmergencia && !aluno.alergias && !aluno.deficiencias && (
-                <p className="text-sm text-muted-foreground">Nenhuma informação de emergência registrada.</p>
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-
-      {/* Botão para Nova Anotação */}
-      {!showForm && (
-        <div className="flex justify-end">
-          <Button onClick={() => setShowForm(true)}>
-            <FileText className="mr-2 h-4 w-4" />
-            Nova Anotação
-          </Button>
+          {/* Turma */}
+          {aluno.turmaId && turmaDoAluno && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="h-5 w-5" />
+                  Turma
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex-1">
+                  <p className="text-sm text-muted-foreground">Código da Turma</p>
+                  <p className="font-semibold text-lg">{turmaDoAluno.codigo}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{turmaDoAluno.ementa}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
-      )}
 
-      {/* Formulário de Nova Anotação */}
-      {showForm && (
-        <AnotacaoAlunoForm
-          onSubmit={handleSubmitAnotacao}
-          isSubmitting={isSubmitting}
-          submitLabel="Salvar Anotação"
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Informações de Emergência */}
+          {(aluno.contatoEmergencia || aluno.alergias || aluno.deficiencias) && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Informações de Emergência
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {aluno.contatoEmergencia && (
+                  <div>
+                    <p className="text-sm font-semibold mb-2">Contato de Emergência</p>
+                    <div className="space-y-2 pl-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Nome</p>
+                        <p className="font-medium">{aluno.contatoEmergencia.nome}</p>
+                      </div>
+                      {aluno.contatoEmergencia.telefone && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Telefone</p>
+                          <p className="font-medium">{aluno.contatoEmergencia.telefone}</p>
+                        </div>
+                      )}
+                      {aluno.contatoEmergencia.parentesco && (
+                        <div>
+                          <p className="text-sm text-muted-foreground">Parentesco</p>
+                          <p className="font-medium capitalize">{aluno.contatoEmergencia.parentesco}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {(aluno.alergias || aluno.deficiencias) && (
+                  <>
+                    {aluno.contatoEmergencia && <Separator />}
+                    <div>
+                      <p className="text-sm font-semibold mb-2">Informações de Saúde</p>
+                      <div className="space-y-2 pl-4">
+                        {aluno.alergias && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Alergias</p>
+                            <p className="font-medium">{aluno.alergias}</p>
+                          </div>
+                        )}
+                        {aluno.deficiencias && (
+                          <div>
+                            <p className="text-sm text-muted-foreground">Deficiências</p>
+                            <p className="font-medium">{aluno.deficiencias}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Observações */}
+          {aluno.observacoes && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Observações</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm whitespace-pre-wrap">{aluno.observacoes}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+
+      {/* Seção de Anotações e Histórico - Full Width */}
+      <div className="space-y-6">
+        {/* Botão para Nova Anotação */}
+        {!showForm && (
+          <div className="flex justify-start">
+            <Button onClick={() => setShowForm(true)}>
+              <FileText className="mr-2 h-4 w-4" />
+              Nova Anotação
+            </Button>
+          </div>
+        )}
+
+        {/* Formulário de Nova Anotação */}
+        {showForm && (
+          <AnotacaoAlunoForm
+            onSubmit={handleSubmitAnotacao}
+            isSubmitting={isSubmitting}
+            submitLabel="Salvar Anotação"
+          />
+        )}
+
+        {/* Histórico do Aluno */}
+        <HistoricoAlunoView
+          aluno={aluno}
+          diarios={diariosDoInstrutor}
+          anotacoes={anotacoesDoAluno}
         />
-      )}
-
-      {/* Histórico do Aluno */}
-      <HistoricoAlunoView
-        aluno={aluno}
-        diarios={diariosDoInstrutor}
-        anotacoes={anotacoesDoAluno}
-      />
+      </div>
     </div>
   );
 }
