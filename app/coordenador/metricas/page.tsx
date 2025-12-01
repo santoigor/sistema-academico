@@ -34,10 +34,14 @@ import { EthnicityChart } from '@/components/charts/EthnicityChart';
 import { StudentStatusChart } from '@/components/charts/StudentStatusChart';
 import { SatisfactionChart } from '@/components/charts/SatisfactionChart';
 import { TableFilters, type TableFiltersState } from '@/components/filters/TableFilters';
+import { ExportConfigModal } from '@/components/admin/ExportConfigModal';
+import { FileDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function MetricasPage() {
   const { alunos, interessados, turmas, instrutores, diarios, cursos, ementas } = useData();
   const [searchAutor, setSearchAutor] = useState<string>('');
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [filters, setFilters] = useState<TableFiltersState>({
     cursoId: null,
     dataInicial: '',
@@ -385,14 +389,29 @@ export default function MetricasPage() {
 
   const totalDiariosFiltrados = metricasInstrutoresFiltrados.reduce((sum, m) => sum + m.diariosLancados, 0);
 
+  const handleDownloadPDF = () => {
+    setExportModalOpen(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-semibold text-foreground">Métricas</h1>
-        <p className="text-muted-foreground mt-1">
-          Visualize indicadores quantitativos e qualitativos do programa
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold text-foreground">Métricas</h1>
+          <p className="text-muted-foreground mt-1">
+            Visualize indicadores quantitativos e qualitativos do programa
+          </p>
+        </div>
+        <Button
+          onClick={handleDownloadPDF}
+          variant="default"
+          size="default"
+          className="gap-2"
+        >
+          <FileDown className="w-4 h-4" />
+          Baixar PDF para Investidor
+        </Button>
       </div>
 
       {/* Overview Cards */}
@@ -974,6 +993,13 @@ export default function MetricasPage() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Modal de Configuração de Exportação */}
+      <ExportConfigModal
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        cursos={cursos}
+      />
     </div>
   );
 }
